@@ -3,7 +3,6 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>HybridDictionary</RootNamespace>
         <TargetFrameworks>net8.0;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
 

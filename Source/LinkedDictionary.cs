@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Runtime.InteropServices;
 
-namespace HybridDictionary;
+namespace MoreCollections;
 
 internal sealed class LinkedDictionary<TKey, TValue> : IDictionary<TKey, TValue> where TKey : notnull
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace HybridDictionary;
+namespace MoreCollections;
 
 public sealed class HybridDictionary<TKey, TValue> : IDictionary<TKey, TValue> where TKey : notnull
 {
@@ -85,7 +85,7 @@ public sealed class HybridDictionary<TKey, TValue> : IDictionary<TKey, TValue> w
 
         if (_list != null)
         {
-            if (_count <= THRESHOLD)
+            if (_count < THRESHOLD)
             {
                 _list.Add(key, value);
                 _count++;
