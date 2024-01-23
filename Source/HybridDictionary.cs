@@ -120,6 +120,8 @@ public sealed class HybridDictionary<TKey, TValue> : IDictionary<TKey, TValue> w
         {
             _dictionary.Clear();
         }
+
+        _count = 0;
     }
 
     /// <summary>Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.</summary>
