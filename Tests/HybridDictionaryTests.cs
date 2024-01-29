@@ -31,15 +31,6 @@ internal sealed class HybridDictionaryTestsFixture
         }
 
         return new HybridDictionary<string, int>(size, comparer);
-
-        ReadOnlySpan<char> chars = _letters.AsSpan();
-        HybridDictionary<string, int> dictionary = new HybridDictionary<string, int>(size, comparer);
-        for (int i = 0; i < size; i++)
-        {
-            dictionary.Add(new string(chars.Slice(i, 1)), i);
-        }
-
-        return dictionary;
     }
 
     internal HybridDictionary<string, int> Create() => new HybridDictionary<string, int>();
@@ -335,6 +326,81 @@ public sealed class HybridDictionaryTests
             buffer[1].Should().Be(p1);
             buffer[2].Should().Be(p2);
             buffer[3].Should().Be(defaultPair);
+        }
+    }
+
+    [Fact]
+    public void Remove()
+    {
+        var listDictionary = _fixture.Create();
+        var hashDictionary = _fixture.CreateWithDictionary();
+        
+        Check(listDictionary, MISSED_KEY, MISSED_KEY,(d, count) => d.AssertSwitchedToList(count));
+        Check(hashDictionary, MISSED_KEY, MISSED_KEY, (d, count) => d.AssertSwitchedToDictionary(count));
+
+        listDictionary = _fixture.Create(StringComparer.OrdinalIgnoreCase);
+        hashDictionary = _fixture.CreateWithDictionary(StringComparer.OrdinalIgnoreCase);
+        
+        Check(listDictionary, MISSED_KEY, MISSED_KEY_ANOTHER_CASE,(d, count) => d.AssertSwitchedToList(count));
+        Check(hashDictionary, MISSED_KEY, MISSED_KEY_ANOTHER_CASE, (d, count) => d.AssertSwitchedToDictionary(count));
+
+        void Check(HybridDictionary<string, int> dictionary, string addKey, string validateKey, Action<HybridDictionary<string, int>, int> assert)
+        {
+            dictionary.AddItem();
+            var item = dictionary.AddItem();
+            assert(dictionary, 2);
+
+            dictionary.Remove(item.Key).Should().BeTrue();
+            assert(dictionary, 1);
+            
+            dictionary.ContainsKey(item.Key).Should().BeFalse();
+
+            dictionary.Remove(MISSED_KEY).Should().BeFalse();
+            assert(dictionary, 1);
+
+            dictionary.Add(addKey, 123);
+            assert(dictionary, 2);
+
+            dictionary.Remove(validateKey).Should().BeTrue();
+            assert(dictionary, 1);
+        }
+    }
+
+    [Fact]
+    public void IDictionaryRemove()
+    {
+        var listDictionary = _fixture.Create();
+        var hashDictionary = _fixture.CreateWithDictionary();
+        
+        Check(listDictionary, MISSED_KEY, MISSED_KEY,(d, count) => d.AssertSwitchedToList(count));
+        Check(hashDictionary, MISSED_KEY, MISSED_KEY, (d, count) => d.AssertSwitchedToDictionary(count));
+
+        listDictionary = _fixture.Create(StringComparer.OrdinalIgnoreCase);
+        hashDictionary = _fixture.CreateWithDictionary(StringComparer.OrdinalIgnoreCase);
+        
+        Check(listDictionary, MISSED_KEY, MISSED_KEY_ANOTHER_CASE,(d, count) => d.AssertSwitchedToList(count));
+        Check(hashDictionary, MISSED_KEY, MISSED_KEY_ANOTHER_CASE, (d, count) => d.AssertSwitchedToDictionary(count));
+
+        void Check(HybridDictionary<string, int> dictionary, string addKey, string validateKey, Action<HybridDictionary<string, int>, int> assert)
+        {
+            var iDictionary = (IDictionary<string, int>)dictionary;
+            dictionary.AddItem();
+            var item = dictionary.AddItem();
+            assert(dictionary, 2);
+
+            iDictionary.Remove(new KeyValuePair<string, int>(item.Key, int.MinValue)).Should().BeFalse();
+            assert(dictionary, 2);
+
+            iDictionary.Remove(new KeyValuePair<string, int>(item.Key, item.Value)).Should().BeTrue();
+            assert(dictionary, 1);
+            
+            dictionary.ContainsKey(item.Key).Should().BeFalse();
+
+            dictionary.Add(addKey, 123);
+            assert(dictionary, 2);
+
+            iDictionary.Remove(new KeyValuePair<string, int>(validateKey, 123)).Should().BeTrue();
+            assert(dictionary, 1);
         }
     }
 }
