@@ -35,17 +35,33 @@ internal sealed class LinkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
 
         Node? last = null;
 
-        for (Node? node = _head; node != null; node = node.next)
+        if (_comparer == null)
         {
-            TKey currentKey = node.key;
-            if (_comparer == null ? currentKey.Equals(key) : _comparer.Equals(currentKey, key))
+            for (Node? node = _head; node != null; node = node.next)
             {
-                throw new ArgumentException("Added duplicate key", nameof(key));
+                TKey currentKey = node.key;
+                if (currentKey.Equals(key))
+                {
+                    throw new ArgumentException("Added duplicate key", nameof(key));
+                }
+
+                last = node;
             }
-
-            last = node;
         }
+        else
+        {
+            for (Node? node = _head; node != null; node = node.next)
+            {
+                TKey currentKey = node.key;
+                if (_comparer.Equals(currentKey, key))
+                {
+                    throw new ArgumentException("Added duplicate key", nameof(key));
+                }
 
+                last = node;
+            }
+        }
+        
         Node newNode = new Node(key, value);
 
         if (last != null)

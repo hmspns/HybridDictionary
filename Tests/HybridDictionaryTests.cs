@@ -103,44 +103,55 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void Add()
     {
-        HybridDictionary<string, int> dictionary = new HybridDictionary<string, int>();
+        HybridDictionary<string, int> dict = new HybridDictionary<string, int>();
+        Check(dict);
 
-        dictionary.Count.Should().Be(0);
-        
-        dictionary.Add("a", 1);
+        dict = new HybridDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        Check(dict);
 
-        dictionary.Count.Should().Be(1);
-
-        dictionary.AssertSwitchedToList();
-
-        dictionary.Invoking(x => x.Add("a", 2)).Should().Throw<ArgumentException>();
+        void Check(HybridDictionary<string, int> dictionary)
+        {
+            dictionary.Count.Should().Be(0);
+            dictionary.Add("a", 1);
+            dictionary.Count.Should().Be(1);
+            dictionary.AssertSwitchedToList();
+            dictionary.Invoking(x => x.Add("a", 2)).Should().Throw<ArgumentException>();
+        }
     }
 
     [Fact]
     public void AddSwitch()
     {
-        var dictionary = _fixture.Create();
-        for (int i = 0; i < _fixture.Threshold; i++)
+        HybridDictionary<string, int> dict = _fixture.Create();
+        Check(dict);
+        dict = new HybridDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        Check(dict);
+
+        void Check(HybridDictionary<string, int> dictionary)
         {
+            for (int i = 0; i < _fixture.Threshold; i++)
+            {
+                dictionary.AddItem();
+            }
+        
+            dictionary.AssertSwitchedToList(_fixture.Threshold);
+        
             dictionary.AddItem();
+        
+            dictionary.AssertSwitchedToDictionary(_fixture.Threshold + 1);
         }
-        
-        dictionary.AssertSwitchedToList(_fixture.Threshold);
-        
-        dictionary.AddItem();
-        
-        dictionary.AssertSwitchedToDictionary(_fixture.Threshold + 1);
+
     }
 
     [Fact]
     public void MissedValueByIndex()
     {
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         listDictionary.AssertSwitchedToList();
 
         listDictionary.Invoking(x => x["some"]).Should().Throw<KeyNotFoundException>();
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary.AssertSwitchedToDictionary();
 
         hashDictionary.Invoking(x => x["some"]).Should().Throw<KeyNotFoundException>();
@@ -149,7 +160,7 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void Indexer()
     {
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         const string KEY = "some";
         const int VALUE = 42;
         const int SECOND_VALUE = 777;
@@ -163,7 +174,7 @@ public sealed class HybridDictionaryTests
         listDictionary.Count.Should().Be(1);
         listDictionary[KEY].Should().Be(SECOND_VALUE);
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary[KEY] = VALUE;
         
         hashDictionary.Count.Should().Be(1);
@@ -178,7 +189,7 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void IndexerWithComparer()
     {
-        var listDictionary = _fixture.Create(StringComparer.OrdinalIgnoreCase);
+        HybridDictionary<string, int> listDictionary = _fixture.Create(StringComparer.OrdinalIgnoreCase);
         const string SET_KEY = MISSED_KEY;
         const string GET_KEY = MISSED_KEY_ANOTHER_CASE;
         const int VALUE = 42;
@@ -193,7 +204,7 @@ public sealed class HybridDictionaryTests
         listDictionary.Count.Should().Be(1);
         listDictionary[GET_KEY].Should().Be(SECOND_VALUE);
 
-        var hashDictionary = _fixture.CreateWithDictionary(10, StringComparer.OrdinalIgnoreCase);
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary(10, StringComparer.OrdinalIgnoreCase);
         hashDictionary[SET_KEY] = VALUE;
         
         hashDictionary.Count.Should().Be(1);
@@ -208,14 +219,14 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void ContainsKey()
     {
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         listDictionary.AssertSwitchedToList();
         listDictionary.ContainsKey(MISSED_KEY).Should().BeFalse();
         
-        var (key, value) = listDictionary.AddItem();
+        (string key, int value) = listDictionary.AddItem();
         listDictionary.ContainsKey(key).Should().BeTrue();
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary.AssertSwitchedToDictionary();
         hashDictionary.ContainsKey(MISSED_KEY).Should().BeFalse();
 
@@ -244,15 +255,15 @@ public sealed class HybridDictionaryTests
         KeyValuePair<string, int> ignoreCasePair = new KeyValuePair<string, int>(MISSED_KEY, 1);
         
         KeyValuePair<string, int> missedPair = new KeyValuePair<string, int>(MISSED_KEY, 0);
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         listDictionary.AssertSwitchedToList();
         listDictionary.AsCollection().Contains(missedPair).Should().BeFalse();
         
-        var pair = listDictionary.AddItem();
+        KeyValuePair<string, int> pair = listDictionary.AddItem();
         listDictionary.AsCollection().Contains(pair).Should().BeTrue();
         listDictionary.AsCollection().Contains(WrongPair(pair)).Should().BeFalse();
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary.AssertSwitchedToDictionary();
         hashDictionary.AsCollection().Contains(missedPair).Should().BeFalse();
 
@@ -278,14 +289,14 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void Clear()
     {
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         listDictionary.AssertSwitchedToList(0);
         listDictionary.AddItem();
         listDictionary.AssertSwitchedToList(1);
         listDictionary.Clear();
         listDictionary.AssertSwitchedToList(0);
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary.AssertSwitchedToDictionary(hashDictionary.Count);
         hashDictionary.AddItem();
         hashDictionary.AssertSwitchedToDictionary(1);
@@ -298,10 +309,10 @@ public sealed class HybridDictionaryTests
     {
         KeyValuePair<string, int> defaultPair = default;
         
-        var listDictionary = _fixture.Create();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
         listDictionary.AssertSwitchedToList();
 
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         hashDictionary.AssertSwitchedToDictionary();
         
         Check(listDictionary);
@@ -311,8 +322,8 @@ public sealed class HybridDictionaryTests
         {
             KeyValuePair<string, int>[] buffer = new KeyValuePair<string, int>[4];
             hybridDictionary.AsCollection().CopyTo(buffer, 0);
-            var p1 = hybridDictionary.AddItem();
-            var p2 = hybridDictionary.AddItem();
+            KeyValuePair<string, int> p1 = hybridDictionary.AddItem();
+            KeyValuePair<string, int> p2 = hybridDictionary.AddItem();
             hybridDictionary.AsCollection().CopyTo(buffer, 0);
             buffer[0].Should().Be(p1);
             buffer[1].Should().Be(p2);
@@ -332,8 +343,8 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void Remove()
     {
-        var listDictionary = _fixture.Create();
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         
         Check(listDictionary, MISSED_KEY, MISSED_KEY,(d, count) => d.AssertSwitchedToList(count));
         Check(hashDictionary, MISSED_KEY, MISSED_KEY, (d, count) => d.AssertSwitchedToDictionary(count));
@@ -347,7 +358,7 @@ public sealed class HybridDictionaryTests
         void Check(HybridDictionary<string, int> dictionary, string addKey, string validateKey, Action<HybridDictionary<string, int>, int> assert)
         {
             dictionary.AddItem();
-            var item = dictionary.AddItem();
+            KeyValuePair<string, int> item = dictionary.AddItem();
             assert(dictionary, 2);
 
             dictionary.Remove(item.Key).Should().BeTrue();
@@ -369,8 +380,8 @@ public sealed class HybridDictionaryTests
     [Fact]
     public void IDictionaryRemove()
     {
-        var listDictionary = _fixture.Create();
-        var hashDictionary = _fixture.CreateWithDictionary();
+        HybridDictionary<string, int> listDictionary = _fixture.Create();
+        HybridDictionary<string, int> hashDictionary = _fixture.CreateWithDictionary();
         
         Check(listDictionary, MISSED_KEY, MISSED_KEY,(d, count) => d.AssertSwitchedToList(count));
         Check(hashDictionary, MISSED_KEY, MISSED_KEY, (d, count) => d.AssertSwitchedToDictionary(count));
@@ -383,9 +394,9 @@ public sealed class HybridDictionaryTests
 
         void Check(HybridDictionary<string, int> dictionary, string addKey, string validateKey, Action<HybridDictionary<string, int>, int> assert)
         {
-            var iDictionary = (IDictionary<string, int>)dictionary;
+            IDictionary<string, int> iDictionary = (IDictionary<string, int>)dictionary;
             dictionary.AddItem();
-            var item = dictionary.AddItem();
+            KeyValuePair<string, int> item = dictionary.AddItem();
             assert(dictionary, 2);
 
             iDictionary.Remove(new KeyValuePair<string, int>(item.Key, int.MinValue)).Should().BeFalse();
@@ -403,6 +414,45 @@ public sealed class HybridDictionaryTests
             assert(dictionary, 1);
         }
     }
+
+    [Fact]
+    public void TryGetValue()
+    {
+        HybridDictionary<string, int> dict = _fixture.Create();
+        Check(dict, MISSED_KEY, MISSED_KEY);
+
+        dict = _fixture.Create(StringComparer.OrdinalIgnoreCase);
+        Check(dict, MISSED_KEY, MISSED_KEY_ANOTHER_CASE);
+        
+        void Check(HybridDictionary<string, int> dictionary, string addKey, string validateKey)
+        {
+            dictionary.AssertSwitchedToList();
+            dictionary.TryGetValue(MISSED_KEY, out int value).Should().BeFalse();
+
+            dictionary.AddItem();
+            KeyValuePair<string, int> pair2 = dictionary.AddItem();
+
+            dictionary.TryGetValue(pair2.Key, out value).Should().BeTrue();
+            value.Should().Be(pair2.Value);
+
+            dictionary.TryGetValue(addKey, out value).Should().BeFalse();
+            dictionary.TryGetValue(validateKey, out value).Should().BeFalse();
+            
+            dictionary.Add(addKey, 999);
+            dictionary.TryGetValue(validateKey, out value).Should().BeTrue();
+            value.Should().Be(999);
+
+            for (int i = 0; i < 10; i++)
+            {
+                dictionary.AddItem();
+            }
+            dictionary.AssertSwitchedToDictionary();
+
+            KeyValuePair<string, int> pair3 = dict.AddItem();
+            dictionary.TryGetValue(pair3.Key, out value).Should().BeTrue();
+            value.Should().Be(pair3.Value);
+        }
+    }
 }
 
 internal static class HybridDictionaryExtensions
@@ -418,7 +468,7 @@ internal static class HybridDictionaryExtensions
 
     internal static void AssertSwitchedToList<TKey, TValue>(this HybridDictionary<TKey, TValue> dictionary, int size = Int32.MinValue)
     {
-        var wrapper = dictionary.ToWrapper();
+        HybridDictionaryWrapper<TKey, TValue> wrapper = dictionary.ToWrapper();
         wrapper.List.Should().NotBeNull();
         wrapper.Dictionary.Should().BeNull();
 
@@ -430,7 +480,7 @@ internal static class HybridDictionaryExtensions
     
     internal static void AssertSwitchedToDictionary<TKey, TValue>(this HybridDictionary<TKey, TValue> dictionary, int size = Int32.MinValue)
     {
-        var wrapper = dictionary.ToWrapper();
+        HybridDictionaryWrapper<TKey, TValue> wrapper = dictionary.ToWrapper();
         wrapper.List.Should().BeNull();
         wrapper.Dictionary.Should().NotBeNull();
 
